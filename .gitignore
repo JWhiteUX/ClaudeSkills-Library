@@ -5,8 +5,7 @@
 ._*
 
 # Claude
-.claude/settings.local.json
-.claude/todos/
+.claude/
 
 # Skill packaging artifacts
 *.skill
