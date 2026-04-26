@@ -1,243 +1,202 @@
 ---
 name: kernel-angus
 description: >
-  Enhanced prompt engineering skill using the KERNEL framework (Keep simple,
-  Easy to verify, Reproducible, Narrow scope, Explicit constraints, Logical
-  structure). Transforms vague requests into structured prompts with Task,
-  Input, Constraints, Output, and Verify sections. Includes KERNEL scoring
-  rubric, multi-prompt chaining for complex requests, and extended examples
-  across domains. Use when the user invokes `/kernel-angus`, `/ka`, or asks
-  to improve, refine, or structure a prompt.
+  Prompt engineering skill that scores prompts against the KERNEL framework
+  (Keep simple, Easy to verify, Reproducible, Narrow scope, Explicit
+  constraints, Logical structure) using PASS/WEAK/FAIL ratings and rewrites
+  them into the TICO-V output format (Task, Input, Constraints, Output,
+  Verify). Classifies the input first (raw idea, draft prompt, system prompt,
+  one-liner), explains every non-PASS rating, and chains complex requests
+  into sequenced sub-prompts. Use when the user invokes `/kernel-angus`,
+  `/ka`, or asks to improve, refine, or structure a prompt.
 ---
 
-# KERNEL Angus
+# KERNEL-Angus: Prompt Engineering Framework
 
-You are a prompt engineering assistant that helps users craft effective prompts using the KERNEL framework. You score prompts against the framework, refine them interactively, and chain complex requests into sequenced sub-prompts when needed.
+Transform vague, bloated, or underspecified prompts into tight, verifiable instructions using the KERNEL principles and TICO-V output structure.
 
-## When to Activate
+## Activation Triggers
 
-Activate when the user:
-- Uses `/kernel-angus` or `/ka`
-- Says "help me with this prompt", "improve this prompt", "refine my prompt", or similar
-- Asks for help writing or structuring a prompt
-- Is handed off from the context-builder skill for prompt restructuring
+- `/kernel` or `/kernel-angus`
+- "improve/refine/fix/tighten this prompt"
+- "help me write a prompt for..."
+- User pastes a prompt and asks for feedback
+- User describes a goal that needs to become a prompt
 
-## The KERNEL Framework
+## Input Classification
 
-**K - Keep it simple**
-- One clear goal, not walls of context
-- Replace vague requests with specific objectives
+Identify what you're working with before analyzing. This changes your approach:
 
-**E - Easy to verify**
-- Include clear success criteria
-- Replace subjective terms ("make it engaging") with measurable ones ("include 3 code examples")
+| Input Type | What It Looks Like | Your Approach |
+|---|---|---|
+| **Raw idea** | "I want to build a script that..." | Interview first — extract specifics before structuring |
+| **Draft prompt** | A paragraph or bullet list aimed at an LLM | Score against KERNEL, then restructure into TICO-V |
+| **Existing system prompt** | Multi-section instructions with role, constraints, examples | Audit section by section — flag bloat, contradictions, gaps |
+| **One-liner** | "Make me a landing page" | Push back — this needs 3-5 clarifying questions minimum |
 
-**R - Reproducible results**
-- Avoid temporal references ("current trends", "latest")
-- Use specific versions and exact requirements
+## The KERNEL Principles
 
-**N - Narrow scope**
-- One prompt = one goal
-- Split complex multi-part requests into separate prompts (see Multi-Prompt Chaining)
+Each principle is a lens for auditing a prompt. Score each as PASS, WEAK, or FAIL during analysis.
 
-**E - Explicit constraints**
-- Tell the AI what NOT to do
-- Add boundaries: language, length, libraries, style restrictions
+### K — Keep it simple
+One clear goal per prompt. If you can't state the objective in one sentence, the prompt is doing too much.
+- FAIL: Multiple unrelated goals crammed together
+- WEAK: Single goal but buried under unnecessary context
+- PASS: Objective is immediately obvious
 
-**L - Logical structure**
-- Format prompts with: Context (input) → Task (function) → Constraints (parameters) → Format (output)
+### E — Easy to verify
+The prompt must define what success looks like. If you can't check the output against concrete criteria, the prompt is underspecified.
+- FAIL: No success criteria at all ("make it good")
+- WEAK: Subjective criteria only ("make it engaging")
+- PASS: Measurable or binary criteria ("return JSON with exactly 3 fields")
 
-## Your Process
+### R — Reproducible results
+The prompt should produce consistent outputs across runs. Temporal references, ambiguous defaults, and unspecified versions break reproducibility.
+- FAIL: Depends on "latest" or "current" without pinning versions
+- WEAK: Some ambiguity that could drift across runs
+- PASS: All references are specific and stable
 
-1. **Ask** the user what they want to accomplish (if not already provided)
-2. **Score** the rough prompt against the KERNEL rubric (see KERNEL Score below)
-3. **Analyze** the prompt against each KERNEL principle
-4. **Decide** whether this needs a single refined prompt or a multi-prompt chain
-5. **Refine** the prompt(s) interactively with the user
-6. **Score again** to show improvement
-7. **Output** the final prompt(s) in the structured format below
+### N — Narrow scope
+One prompt, one job. If the prompt requires the LLM to context-switch between unrelated subtasks, split it.
+- FAIL: Prompt asks for research AND code AND a summary in different domains
+- WEAK: Related subtasks that could be chained but are stuffed into one prompt
+- PASS: Single coherent task with clear boundaries
 
-## Output Format
+### E — Explicit constraints
+Tell the model what NOT to do. Boundaries prevent the most common failure modes: wrong language, wrong format, unwanted libraries, hallucinated content.
+- FAIL: No constraints — model freestyles everything
+- WEAK: Some constraints but missing obvious ones (no length limit, no format spec)
+- PASS: Positive and negative constraints that box in the output
 
-Present each refined prompt in this structure:
+### L — Logical structure
+The prompt should flow: Context → Task → Constraints → Format. Scattered instructions force the model to reconstruct your intent.
+- FAIL: Stream-of-consciousness with instructions buried mid-paragraph
+- WEAK: Roughly organized but key info is out of order or repeated
+- PASS: Clean separation of context, task, constraints, and expected output
+
+## Analysis Process
+
+Run this for every prompt you review. Do not skip the scorecard.
+
+### Step 1: Classify the input
+Identify the input type (raw idea, draft prompt, system prompt, one-liner). State it explicitly.
+
+### Step 2: Score against KERNEL
+Evaluate each of the six principles. Present as a scorecard:
 
 ```
-Task: [Single, clear objective]
-Input: [Context and source materials]
-Constraints: [What to do AND what NOT to do]
-Output: [Expected format and deliverable]
-Verify: [How to confirm success]
+KERNEL Scorecard
+─────────────────────────────
+K  Keep it simple       PASS
+E  Easy to verify       FAIL  ← no success criteria defined
+R  Reproducible         WEAK  ← "latest version" is ambiguous
+N  Narrow scope         PASS
+E  Explicit constraints FAIL  ← no format, length, or negative constraints
+L  Logical structure    WEAK  ← task buried after 3 paragraphs of context
+─────────────────────────────
+Score: 2/6 PASS · 2/6 WEAK · 2/6 FAIL
 ```
 
-## KERNEL Score
+### Step 3: Explain each non-PASS rating
+For every WEAK or FAIL, state:
+1. What's wrong (the specific violation)
+2. Why it matters (the failure mode it enables)
+3. How to fix it (the concrete change)
 
-Rate every prompt against the six KERNEL principles before and after refinement. Each principle scores 0 (violated or missing) or 1 (satisfied). Present as a table:
+Do not explain PASS ratings unless the user asks.
 
-| Principle | Before | After | Notes |
-|-----------|--------|-------|-------|
-| **K** Keep it simple | 0/1 | 0/1 | [brief note] |
-| **E** Easy to verify | 0/1 | 0/1 | [brief note] |
-| **R** Reproducible | 0/1 | 0/1 | [brief note] |
-| **N** Narrow scope | 0/1 | 0/1 | [brief note] |
-| **E** Explicit constraints | 0/1 | 0/1 | [brief note] |
-| **L** Logical structure | 0/1 | 0/1 | [brief note] |
-| **Total** | X/6 | X/6 | |
+### Step 4: Restructure into TICO-V
+Rewrite the prompt using the TICO-V output format below. Show before/after so the user sees exactly what changed.
 
-Use the score to guide which principles need the most attention during refinement. A prompt scoring 5/6 or 6/6 is ready to use.
+### Step 5: Confirm or iterate
+Present the rewritten prompt and ask if it captures intent. If the user pushes back on a constraint or scope change, adjust — but explain the tradeoff.
 
-## Multi-Prompt Chaining
+## TICO-V Output Format
 
-When a request is too complex for a single KERNEL prompt, split it into a chain:
+Every refined prompt lands in this structure. TICO-V stands for Task, Input, Constraints, Output, Verify.
 
-1. **Identify sub-goals** — Break the request into independent objectives. Each sub-goal should pass the Narrow scope test on its own.
-2. **One KERNEL prompt per sub-goal** — Write each in the standard Task/Input/Constraints/Output/Verify format.
-3. **Define the data flow** — The output of prompt N becomes the input of prompt N+1. State this explicitly in each prompt's Input field.
-4. **Present as a numbered sequence** — Show the chain so the user can execute prompts in order or hand them to separate agents.
-
-**When to chain vs. keep as one prompt:**
-- Chain when the request has 2+ distinct deliverables
-- Chain when different steps need different constraints or expertise
-- Keep as one when the steps are tightly coupled and share all context
-
-## Extended Examples
-
-### Example 1: Code / Build
-
-**Before:** "Help me write a script to process some data files and make them more efficient"
-
-| Principle | Score | Issue |
-|-----------|-------|-------|
-| K | 0 | Two goals: process + optimize |
-| E | 0 | No success criteria |
-| R | 0 | "data files" is unspecified |
-| N | 0 | Scope unbounded |
-| E | 0 | No constraints on language, libraries, size |
-| L | 0 | No structure |
-| **Total** | **0/6** | |
-
-**After:**
 ```
-Task: Python script to merge CSV files and deduplicate rows by email column
-Input: Directory of CSVs with identical column structure (name, email, date, status)
-Constraints: Pandas only, under 50 lines, no external APIs, preserve the most recent row per duplicate email
-Output: Single merged.csv with header row and deduplicated data
-Verify: Run on test_data/ directory; output row count equals unique email count in source files
+Task: [Single sentence. What the model should do.]
+Input: [What the model is working with — files, data, context, prior output.]
+Constraints:
+  - DO: [Positive constraints — required behaviors, libraries, patterns]
+  - DON'T: [Negative constraints — what to avoid, exclude, skip]
+Output: [Expected format, length, structure of the deliverable]
+Verify: [How to confirm the output is correct — concrete checks, not vibes]
 ```
 
-| Principle | Score |
-|-----------|-------|
-| K | 1 |
-| E | 1 |
-| R | 1 |
-| N | 1 |
-| E | 1 |
-| L | 1 |
-| **Total** | **6/6** |
+### TICO-V Rules
+- **Task** must be one sentence. If you can't compress it, the scope is too broad — split the prompt.
+- **Input** is what goes in, not what comes out. If there's no input (pure generation), say "None — generate from scratch."
+- **Constraints** always has both DO and DON'T sections. If you can't think of a DON'T, you haven't thought hard enough about failure modes.
+- **Output** specifies format (JSON, markdown, code file, prose), approximate length, and structure.
+- **Verify** must be actionable. "It should be good" is not verification. "Run pytest and expect 0 failures" is.
 
-### Example 2: Content / Writing
+## Examples
 
-**Before:** "Write me a blog post about AI in healthcare"
+### Example 1: Raw Idea → TICO-V
 
-| Principle | Score | Issue |
-|-----------|-------|-------|
-| K | 0 | Topic too broad |
-| E | 0 | No measurable criteria |
-| R | 0 | "AI in healthcare" shifts daily |
-| N | 0 | Could be 100 different articles |
-| E | 0 | No tone, length, or audience constraints |
-| L | 0 | No structure |
-| **Total** | **0/6** | |
+**User input:** "I want a script that cleans up my CSV files"
 
-**After:**
+**Scorecard:**
 ```
-Task: Write a 1,200-word blog post explaining how federated learning enables hospital collaboration without sharing patient data
-Input: Target audience is hospital CIOs evaluating privacy-preserving ML. Reference the 2023 Nature Medicine federated learning survey by Rieke et al.
-Constraints: No jargon without definition, no product pitches, no speculative claims. Use 3 concrete hospital use cases. Written in professional but accessible tone.
-Output: Markdown with H2 subheadings, an intro hook, 3 use-case sections, and a summary paragraph
-Verify: Passes Hemingway readability at Grade 10 or below; all claims traceable to cited sources
+K  Keep it simple       WEAK  ← "cleans up" is vague — deduplication? formatting? validation?
+E  Easy to verify       FAIL  ← no definition of "clean"
+R  Reproducible         FAIL  ← no CSV structure specified
+N  Narrow scope         WEAK  ← could mean 5 different operations
+E  Explicit constraints FAIL  ← no language, no libraries, no error handling spec
+L  Logical structure    FAIL  ← single sentence, no structure at all
+Score: 0/6 PASS · 2/6 WEAK · 4/6 FAIL
 ```
 
-| Principle | Score |
-|-----------|-------|
-| K | 1 |
-| E | 1 |
-| R | 1 |
-| N | 1 |
-| E | 1 |
-| L | 1 |
-| **Total** | **6/6** |
-
-### Example 3: Analysis / Data
-
-**Before:** "Analyze our customer churn and tell me what to do about it"
-
-| Principle | Score | Issue |
-|-----------|-------|-------|
-| K | 0 | Two goals: analyze + recommend |
-| E | 0 | No definition of "churn" or success metric |
-| R | 0 | "Our" data is unspecified |
-| N | 0 | Churn analysis could fill a book |
-| E | 0 | No constraints on method, time range, tools |
-| L | 0 | No structure |
-| **Total** | **0/6** | |
-
-**After:**
+**After KERNEL refinement:**
 ```
-Task: Identify the top 3 predictors of 90-day churn for paid subscribers
-Input: Subscription events table (user_id, plan, signup_date, cancel_date, last_login, support_tickets) from Jan 2024–Dec 2024
-Constraints: SQL and Python only. Define churn as no login for 90+ consecutive days. Exclude free-tier users. Do not recommend actions yet — analysis only.
-Output: Table of top 3 churn predictors with correlation coefficients, plus one visualization (survival curve by plan tier)
-Verify: Predictors validated via 70/30 train-test split with AUC > 0.7
+Task: Python script to deduplicate and normalize column headers in CSV files.
+Input: Directory of .csv files with inconsistent headers (mixed case, trailing spaces, duplicate rows).
+Constraints:
+  - DO: Use pandas. Handle UTF-8 encoding. Log removed duplicates to stdout.
+  - DON'T: Don't modify original files — write cleaned versions to output/. Don't drop columns.
+Output: One cleaned .csv per input file in output/, plus a summary line count to stdout.
+Verify: Run on test_data/ — output files should have fewer rows than input, no duplicate rows, all headers lowercase with underscores.
 ```
 
-| Principle | Score |
-|-----------|-------|
-| K | 1 |
-| E | 1 |
-| R | 1 |
-| N | 1 |
-| E | 1 |
-| L | 1 |
-| **Total** | **6/6** |
+### Example 2: Bloated Prompt → TICO-V
 
-### Example 4: Multi-Prompt Chain
+**User input:**
+> "I need you to help me create a comprehensive marketing strategy for our new product launch. First research the market, then identify our target audience, create buyer personas, develop messaging, write ad copy for three platforms, design an email sequence, and also create a social media calendar for the next quarter. Make it engaging and professional."
 
-**Before:** "Build me a landing page for my SaaS product with copy, design, and analytics"
-
-This request has 3 distinct deliverables requiring different expertise. Chain it:
-
-**Prompt 1 of 3 — Copy**
+**Scorecard:**
 ```
-Task: Write landing page copy for a B2B SaaS time-tracking tool targeting agencies with 10-50 employees
-Input: Product name: "Takt". Key features: automatic time capture, client-ready reports, Slack integration
-Constraints: Hero headline under 10 words, 3 feature sections with headline + 2-sentence description each, one CTA. No superlatives ("best", "revolutionary"). Tone: confident, minimal.
-Output: Structured markdown with labeled sections (Hero, Features×3, CTA)
-Verify: All copy fits above the fold at 1440px viewport; no section exceeds 40 words
+K  Keep it simple       FAIL  ← 7+ distinct tasks in one prompt
+E  Easy to verify       FAIL  ← "engaging and professional" is not measurable
+R  Reproducible         WEAK  ← "new product" and "next quarter" are unanchored
+N  Narrow scope         FAIL  ← this is an entire marketing department's quarterly plan
+E  Explicit constraints FAIL  ← no platform specs, no tone guide, no length limits
+L  Logical structure    WEAK  ← sequential but monolithic
+Score: 0/6 PASS · 2/6 WEAK · 4/6 FAIL
 ```
 
-**Prompt 2 of 3 — Design**
+**Recommendation:** Split into 4-5 chained prompts. Start with:
 ```
-Task: Create a responsive landing page using the copy from Prompt 1
-Input: Copy output from Prompt 1. Brand colors: #1A1A2E (primary), #E94560 (accent), #FFFFFF (background)
-Constraints: HTML + Tailwind CSS only, no JavaScript frameworks. Mobile-first. Single page, no navigation links. System font stack only.
-Output: Single index.html file with inline Tailwind
-Verify: Lighthouse performance score > 95; renders correctly at 375px, 768px, and 1440px
-```
-
-**Prompt 3 of 3 — Analytics**
-```
-Task: Add privacy-respecting analytics to the landing page from Prompt 2
-Input: The index.html output from Prompt 2
-Constraints: Use Plausible Analytics (self-hosted). Track: page views, CTA clicks, scroll depth at 25/50/75/100%. No cookies, no personal data. Script must load async and not affect Lighthouse score.
-Output: Updated index.html with analytics script and event tracking attributes
-Verify: CTA click triggers event visible in Plausible dashboard; Lighthouse score unchanged
+Task: Define 3 buyer personas for [product name] based on [market segment].
+Input: Product spec document (attached). Competitor landscape: [list 3 competitors].
+Constraints:
+  - DO: Include demographics, pain points, buying triggers, preferred channels.
+  - DON'T: Don't exceed 200 words per persona. Don't invent market data — use only what's provided.
+Output: Markdown document with 3 persona sections, each with a summary table.
+Verify: Each persona maps to a distinct segment. No overlapping demographics. All fields populated.
 ```
 
-## Guidelines
+Then chain: personas → messaging framework → platform-specific copy → email sequence → calendar.
 
-- Be concise in your guidance
-- Always show the KERNEL Score before and after refinement
-- Ask clarifying questions to nail down specifics
-- If the user's goal is already well-defined, acknowledge what's good before suggesting improvements
-- For complex requests, recommend splitting into chained prompts and show the chain
-- If the user just wants a quick refinement (not a full scoring exercise), respect that — score briefly inline rather than building full tables
+## Handling Edge Cases
+
+**User says "just make it work":** Push back. Ask what "working" means — that's the Verify section they're skipping.
+
+**User resists constraints:** Explain that unconstrained prompts produce inconsistent outputs. Offer to start with 2-3 light constraints and tighten after the first run.
+
+**User pastes a 500-word prompt:** Don't rewrite blindly. Score it first, then ask which KERNEL violations they want to prioritize. Often the fix is splitting, not rewriting.
+
+**User wants a system prompt reviewed:** Audit section by section. System prompts commonly fail on K (too many roles), N (scope creep over time), and E-constraints (accumulated contradictions). Flag redundant instructions and sections that fight each other.
+
+**Prompt is already solid:** Say so. Score it, note the PASSes, suggest one or two minor tightening moves if any exist. Don't manufacture problems.

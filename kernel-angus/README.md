@@ -1,6 +1,6 @@
 # Kernel Angus
 
-An enhanced Claude skill for prompt engineering using the **KERNEL framework** — a structured approach that eliminates ambiguity and produces reproducible results. Builds on the core KERNEL methodology with a scoring rubric, multi-prompt chaining, and extended examples across domains.
+An enhanced Claude skill for prompt engineering using the **KERNEL framework** — a structured approach that eliminates ambiguity and produces reproducible results. Scores prompts with a PASS/WEAK/FAIL scorecard and rewrites them into the **TICO-V** output format (Task, Input, Constraints, Output, Verify).
 
 ## The Framework
 
@@ -15,20 +15,24 @@ An enhanced Claude skill for prompt engineering using the **KERNEL framework** �
 
 ## What's Enhanced
 
-- **KERNEL Score** — Every prompt gets a 0–6 rubric rating before and after refinement, so you can see exactly which principles improved
-- **Multi-Prompt Chaining** — Complex requests with multiple deliverables get split into sequenced KERNEL prompts with defined data flow between them
-- **Extended Examples** — Before/after transformations across Code, Content, Analysis, and a full chained multi-prompt example
+- **Input Classification** — Every prompt is typed first (raw idea, draft prompt, system prompt, one-liner) because each type needs a different approach before scoring
+- **PASS/WEAK/FAIL Scorecard** — Each KERNEL principle gets a three-tier rating with a short reason for every non-PASS, so you see exactly what to fix
+- **TICO-V Output Format** — Refined prompts land in a fixed Task / Input / Constraints (DO + DON'T) / Output / Verify structure
+- **Multi-Prompt Chaining** — Complex requests are split into sequenced sub-prompts with defined data flow; demonstrated inline in the bloated-prompt example rather than as a separate process
+- **Edge-Case Playbook** — Built-in handling for "just make it work", users who resist constraints, 500-word prompt pastes, and system-prompt audits
 
-## Output Format
+## Output Format: TICO-V
 
-Every refined prompt follows this structure:
+TICO-V stands for **Task, Input, Constraints, Output, Verify**. Every refined prompt follows this structure:
 
 ```
-Task: [Single, clear objective]
-Input: [Context and source materials]
-Constraints: [What to do AND what NOT to do]
-Output: [Expected format and deliverable]
-Verify: [How to confirm success]
+Task: [Single sentence. What the model should do.]
+Input: [What the model is working with — files, data, context, prior output.]
+Constraints:
+  - DO: [Positive constraints — required behaviors, libraries, patterns]
+  - DON'T: [Negative constraints — what to avoid, exclude, skip]
+Output: [Expected format, length, structure of the deliverable]
+Verify: [How to confirm the output is correct — concrete checks, not vibes]
 ```
 
 ## Usage
